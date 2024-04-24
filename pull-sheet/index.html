@@ -61,56 +61,57 @@
     <!-- Container for lab members -->
     <div id="labMembersContainer"></div>
 
-    <script>
-        $(document).ready(function() {
-            // Fetch lab members data
-            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ16qjFNOzbKIRt8V7SB4d_5vKdzFGUa7WuzIn_0npo7CQ82fgX_Hcfg3v--aB6pdiX6-ZiqtNO-sIS/pub?gid=253503174&single=true&output=tsv', {
-                download: true,
-                header: true,
-                complete: function(results) {
-                    var labMembers = results.data;
+   <script>
+    $(document).ready(function() {
+        // Fetch lab members data
+        Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ16qjFNOzbKIRt8V7SB4d_5vKdzFGUa7WuzIn_0npo7CQ82fgX_Hcfg3v--aB6pdiX6-ZiqtNO-sIS/pub?gid=253503174&single=true&output=tsv', {
+            download: true,
+            header: true,
+            complete: function(results) {
+                var labMembers = results.data;
 
-                    // Display all lab members initially
-                    displayLabMembers(labMembers);
+                // Display all lab members initially
+                displayLabMembers(labMembers);
 
-                    // Event listener for position filter change
-                    $('#positionFilter').change(function() {
-                        var selectedPosition = $(this).val();
-                        filterLabMembers(labMembers, selectedPosition);
-                    });
-                }
-            });
-        });
-
-        // Function to display lab members
-        function displayLabMembers(labMembers) {
-            var labMembersContainer = $('#labMembersContainer');
-            labMembersContainer.empty(); // Clear existing content
-
-            // Iterate over lab members and create HTML elements
-            labMembers.forEach(function(member) {
-                var memberElement = $('<div>').addClass('labMember');
-                memberElement.append($('<h2>').text(member.Name));
-                memberElement.append($('<p>').text('Position: ' + member.Position));
-                // Add more member details as needed
-                labMembersContainer.append(memberElement);
-            });
-        }
-
-        // Function to filter lab members based on selected position
-        function filterLabMembers(labMembers, selectedPosition) {
-            var filteredLabMembers = labMembers;
-
-            if (selectedPosition !== 'all') {
-                filteredLabMembers = labMembers.filter(function(member) {
-                    return member.Position === selectedPosition;
+                // Event listener for position filter change
+                $('#positionFilter').change(function() {
+                    var selectedPosition = $(this).val();
+                    filterLabMembers(labMembers, selectedPosition);
                 });
             }
+        });
+    });
 
-            // Display filtered lab members
-            displayLabMembers(filteredLabMembers);
+    // Function to display lab members
+    function displayLabMembers(labMembers) {
+        var labMembersContainer = $('#labMembersContainer');
+        labMembersContainer.empty(); // Clear existing content
+
+        // Iterate over lab members and create HTML elements
+        labMembers.forEach(function(member) {
+            var memberElement = $('<div>').addClass('labMember');
+            memberElement.append($('<h2>').text(member.Name));
+            memberElement.append($('<p>').text('Position: ' + member.Position));
+            // Add more member details as needed
+            labMembersContainer.append(memberElement);
+        });
+    }
+
+    // Function to filter lab members based on selected position
+    function filterLabMembers(labMembers, selectedPosition) {
+        var filteredLabMembers = labMembers;
+
+        if (selectedPosition !== 'all') {
+            filteredLabMembers = labMembers.filter(function(member) {
+                return member.Position === selectedPosition;
+            });
         }
-    </script>
+
+        // Display filtered lab members
+        displayLabMembers(filteredLabMembers);
+    }
+</script>
+
 </body>
 </html>
 
