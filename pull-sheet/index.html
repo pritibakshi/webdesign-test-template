@@ -1,138 +1,116 @@
----
-layout: default
-title: Update Spreadsheet
----
-
-<!--These are JavaScript Libraries-->
-<!-- <script type="text/javascript" src="https://requirejs.org/docs/release/2.3.5/minified/require.js"></script> -->
-
-<script type="text/javascript" src="papaparse.min.js"></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.1.0/papaparse.min.js -->
-<script type="text/javascript" src="js-yaml.min.js"></script> <!-- https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js -->
-<script type="text/javascript" src="github.js"></script>
-
-<h1>Update</h1>
-<script type="text/javascript">
-
-    // dict of all published sheets and corresponding resource names
-    var $resources = {
-        team: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ16qjFNOzbKIRt8V7SB4d_5vKdzFGUa7WuzIn_0npo7CQ82fgX_Hcfg3v--aB6pdiX6-ZiqtNO-sIS/pub?gid=253503174&single=true&output=tsv'
-    }
-
-    var header_maps = {
-        team: {
-            "Acknowledgement": "acknowledgement",
-            "Department / Center / School": "affiliation",
-            "Alumni?": "alumni",
-            "What do you do now?": "alumni_current",
-            "Short bio 1": "bio1",
-            "Short bio 2": "bio2",
-            "Short bio 3": "bio3",
-            "Short bio 4": "bio4",
-            "Display?": "display",
-            "email": "email",
-            "Image": "image",
-            "Name": "name",
-            "Position": "position",
-            "Timestamp": "timestamp",
-            "Year of joining": "year",
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lab Members</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="papaparse.min.js"></script>
+    <script src="js-yaml.min.js"></script>
+    <style>
+        /* Internal CSS styles */
+        h1 {
+            text-align: center;
+            margin-top: 20px;
         }
-    }
 
-    // some constants related to gh-pages repository
-    var $org = 'gsaurabhr';
-    var $repo = 'webdesign-test-template';
-    var $branch = 'gh-pages';
-    
-    // this function extracts parameters from the URL to pass on to the javascript
-    function getUrlVar(key){
-        var result = new RegExp(key + "=([^&]*)", "i").exec(window.location.search);
-        return result && unescape(result[1]) || "";
-    }
-
-    function getGDriveDlURL(url){
-        // reference: https://github.com/UltiRequiem/drive_link/blob/main/mod.ts
-        const regexp = /https:\/\/drive\.google\.com\/open\?id=(?<id>.*?)$/;
-        if (regexp.test(url)) {
-            const res = regexp.exec(url);
-            var id = res?.groups?.id;
-            return `https://drive.google.com/thumbnail?id=${id.trim()}&sz=w300`
+        #positionFilter {
+            display: block;
+            margin: 20px auto;
+            padding: 8px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
         }
-        return url;
-    }
 
-    // extract parameters that need to be passed and should not be saved
-    var $GHToken = getUrlVar('ghtoken');
+        #labMembersContainer {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin: 0 auto;
+            max-width: 800px;
+        }
 
-    // variables that we will need later
-    var $yaml_store = "";
-    // var $resource = "";
+        .labMember {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f9f9f9;
+            width: calc(33.33% - 20px);
+            box-sizing: border-box;
+        }
 
-    function init() {
-        $.each($resources, function(name, url) {
-            // $resource = name;
-            function cb(results) {
-                showInfo(results, name);
-            }
+        .labMember h2 {
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Lab Members</h1>
 
-            function map_header(header, index) {
-                return header_maps[name][header];
-            }
+    <!-- Filter dropdown for positions -->
+    <select id="positionFilter">
+        <option value="all">All Positions</option>
+        <option value="PhD">PhD</option>
+        <option value="MS(R)">MS(R)</option>
+        <option value="UG">UG</option>
+        <!-- Add more options for other positions if needed -->
+    </select>
 
-            function map_values(value, header) {
-                if ( header == "image" ) {return getGDriveDlURL(value);}
-                if ( header == "display") {return parseInt(value);}
-                if ( header == "alumni") {return parseInt(value);}
-                if ( header == "highlight") {return parseInt(value);}
-                if ( header == "conference") {return parseInt(value);}
-                return value;
-            }
+    <!-- Container for lab members -->
+    <div id="labMembersContainer"></div>
 
-            Papa.parse(url, {
-                delimiter: "\t",
+    <script>
+        $(document).ready(function() {
+            // Fetch lab members data
+            Papa.parse('https://docs.google.com/spreadsheets/d/e/2PACX-1vQ16qjFNOzbKIRt8V7SB4d_5vKdzFGUa7WuzIn_0npo7CQ82fgX_Hcfg3v--aB6pdiX6-ZiqtNO-sIS/pub?gid=253503174&single=true&output=tsv', {
                 download: true,
-                skipEmptyLines: 'greedy',
-                dynamicTyping: 'true',
                 header: true,
-                transformHeader: map_header,
-                transform: map_values,
-                complete: cb
+                complete: function(results) {
+                    var labMembers = results.data;
+
+                    // Display all lab members initially
+                    displayLabMembers(labMembers);
+
+                    // Event listener for position filter change
+                    $('#positionFilter').change(function() {
+                        var selectedPosition = $(this).val();
+                        filterLabMembers(labMembers, selectedPosition);
+                    });
+                }
             });
         });
-    };
 
-    window.addEventListener('DOMContentLoaded', init)
+        // Function to display lab members
+        function displayLabMembers(labMembers) {
+            var labMembersContainer = $('#labMembersContainer');
+            labMembersContainer.empty(); // Clear existing content
 
-    function showInfo(results, $resource) {
-        // var GitHub = require('github-api');
-        console.log($resource);
-        console.log(results.data);
-        console.log(results.errors);
-        console.log(results.meta);
-        var data = results.data
-          
-        // data comes through as a simple array since simpleSheet is turned on
-        alert("Successfully processed " + data.length + " rows for " + $resource + "!")
-         
-        $items = new Array();
-
-        $.each( data, function(i, service) {
-            $p = {};
-            $.each(service, function($key, $value) {
-              $p[$key] = $value;
+            // Iterate over lab members and create HTML elements
+            labMembers.forEach(function(member) {
+                var memberElement = $('<div>').addClass('labMember');
+                memberElement.append($('<h2>').text(member.Name));
+                memberElement.append($('<p>').text('Position: ' + member.Position));
+                // Add more member details as needed
+                labMembersContainer.append(memberElement);
             });
-            $items.push($p);
-        });
+        }
 
-        console.log($items);
-        
-        $yaml_dump = jsyaml.dump($items);
-        document.getElementById('source').value = $yaml_dump;
+        // Function to filter lab members based on selected position
+        function filterLabMembers(labMembers, selectedPosition) {
+            var filteredLabMembers = labMembers;
 
-        var github = new Github({token: $GHToken, auth: "oauth"});
-        var repo = github.getRepo($org, $repo);
-        $writepath = '_data/' + $resource + '.yaml';
-        
-        repo.write($branch, $writepath, $yaml_dump, 'Update ' + $resource, function(err) { console.log(err); });
-    };
-</script>
-<textarea cols="10" rows="5" id="source" style="border: 1px solid #000; width: 100%; height: 500px;"></textarea>
+            if (selectedPosition !== 'all') {
+                filteredLabMembers = labMembers.filter(function(member) {
+                    return member.Position === selectedPosition;
+                });
+            }
+
+            // Display filtered lab members
+            displayLabMembers(filteredLabMembers);
+        }
+    </script>
+</body>
+</html>
+
