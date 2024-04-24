@@ -100,6 +100,7 @@
 
     // Function to filter lab members based on selected position
     function filterLabMembers(labMembers, selectedPosition) {
+        console.log("Selected position:", selectedPosition);
         var filteredLabMembers = labMembers;
 
         if (selectedPosition !== 'all') {
@@ -110,6 +111,7 @@
 
         // Display filtered lab members
         displayLabMembers(filteredLabMembers);
+        
     }
 </script>
 
